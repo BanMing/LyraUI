@@ -7,7 +7,7 @@
 #include "ISettingsSection.h"
 #include "Modules/ModuleManager.h"
 #include "SubSystem/GameUIManagerSubsystem.h"
-#include "Messaging/GameUIMessagingSubsystem.h"
+#include "SubSystem/GameUIMessagingSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "FGameCommonUIBaseModule"
 
@@ -17,11 +17,11 @@ void FGameCommonUIBaseModule::StartupModule()
 
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
-		SettingsModule->RegisterSettings("Project", "Plugins", "GameUIManagerSubsystem", LOCTEXT("RuntimeSettingsName", "GameUIManagerSubsystem"), LOCTEXT("RuntimeSettingsDescription", "Configure the Game Common UI plugin"),
-			GetMutableDefault<UGameUIManagerSubsystem>());
+		SettingsModule->RegisterSettings("Project", "Plugins", "GameUIManagerSubsystem", LOCTEXT("RuntimeSettingsName", "GameUIManagerSubsystem"),
+			LOCTEXT("RuntimeSettingsDescription", "Configure the Game Common UI plugin"), GetMutableDefault<UGameUIManagerSubsystem>());
 
-		SettingsModule->RegisterSettings("Project", "Plugins", "GameUIMessagingSubsystem", LOCTEXT("RuntimeSettingsName", "GameUIMessagingSubsystem"), LOCTEXT("RuntimeSettingsDescription", "Configure the Game Common UI plugin"),
-			GetMutableDefault<UGameUIMessagingSubsystem>());
+		SettingsModule->RegisterSettings("Project", "Plugins", "GameUIMessagingSubsystem", LOCTEXT("RuntimeSettingsName", "GameUIMessagingSubsystem"),
+			LOCTEXT("RuntimeSettingsDescription", "Configure the Game Common UI plugin"), GetMutableDefault<UGameUIMessagingSubsystem>());
 	}
 }
 

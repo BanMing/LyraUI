@@ -3,8 +3,8 @@
 #include "Actions/AsyncAction_ShowConfirmation.h"
 
 #include "Engine/GameInstance.h"
-#include "Messaging/GameUIGameDialog.h"
-#include "Messaging/GameUIMessagingSubsystem.h"
+#include "Panels/Messaging/GameUIGameDialogPanel.h"
+#include "SubSystem/GameUIMessagingSubsystem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AsyncAction_ShowConfirmation)
 

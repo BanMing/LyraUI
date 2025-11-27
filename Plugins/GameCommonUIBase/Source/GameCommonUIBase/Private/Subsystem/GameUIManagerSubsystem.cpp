@@ -2,11 +2,11 @@
 
 #include "SubSystem/GameUIManagerSubsystem.h"
 
-#include "Basic/GameUILocalPlayer.h"
+#include "Game/GameUILocalPlayer.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/HUD.h"
-#include "SubSystem/GameUIPolicy.h"
-#include "SubSystem/PrimaryGameLayout.h"
+#include "Layout/GameUIPolicy.h"
+#include "Layout/PrimaryGameLayout.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameUIManagerSubsystem)
 

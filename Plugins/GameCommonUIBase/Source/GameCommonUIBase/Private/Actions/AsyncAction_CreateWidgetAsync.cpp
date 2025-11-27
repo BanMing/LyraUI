@@ -8,7 +8,7 @@
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/StreamableManager.h"
-#include "SubSystem/CommonUIExtensions.h"
+#include "GameUIFunctionLibrary.h"
 #include "UObject/Stack.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AsyncAction_CreateWidgetAsync)
@@ -45,14 +45,14 @@ UAsyncAction_CreateWidgetAsync* UAsyncAction_CreateWidgetAsync::CreateWidgetAsyn
 
 void UAsyncAction_CreateWidgetAsync::Activate()
 {
-	SuspendInputToken = bSuspendInputUntilComplete ? UCommonUIExtensions::SuspendInputForPlayer(OwningPlayer.Get(), InputFilterReason_Template) : NAME_None;
+	SuspendInputToken = bSuspendInputUntilComplete ? UGameUIFunctionLibrary::SuspendInputForPlayer(OwningPlayer.Get(), InputFilterReason_Template) : NAME_None;
 
 	TWeakObjectPtr<UAsyncAction_CreateWidgetAsync> LocalWeakThis(this);
 	StreamingHandle = UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(
 		UserWidgetSoftClass.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ThisClass::OnWidgetLoaded), FStreamableManager::AsyncLoadHighPriority);
 
 	// Setup a cancel delegate so that we can resume input if this handler is canceled.
-	StreamingHandle->BindCancelDelegate(FStreamableDelegate::CreateWeakLambda(this, [this]() { UCommonUIExtensions::ResumeInputForPlayer(OwningPlayer.Get(), SuspendInputToken); }));
+	StreamingHandle->BindCancelDelegate(FStreamableDelegate::CreateWeakLambda(this, [this]() { UGameUIFunctionLibrary::ResumeInputForPlayer(OwningPlayer.Get(), SuspendInputToken); }));
 }
 
 void UAsyncAction_CreateWidgetAsync::Cancel()
@@ -70,7 +70,7 @@ void UAsyncAction_CreateWidgetAsync::OnWidgetLoaded()
 {
 	if (bSuspendInputUntilComplete)
 	{
-		UCommonUIExtensions::ResumeInputForPlayer(OwningPlayer.Get(), SuspendInputToken);
+		UGameUIFunctionLibrary::ResumeInputForPlayer(OwningPlayer.Get(), SuspendInputToken);
 	}
 
 	// If the load as successful, create it, otherwise don't complete this.

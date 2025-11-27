@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{97DAB207-47C5-FE46-A748-9CB4D9F763FD}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "LyraUI",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		},
+	]
+}
