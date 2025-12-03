@@ -102,7 +102,19 @@ Lyra中为了实现分屏UI，设计了GameUIPolicy和PrimaryGameLayout。这里
 
 因为Panel都是有Switcher管理的，所以所有的Panel都需要继承UGameUIActivatablePanel，也就是需要继承至UCommonActivatableWidget。这样才能有Switcher控制显示隐藏。
 
-必须实现GetDesiredFocusTarget方法，用于激活面板时聚焦那个Widget。
+
+#### CommonActivatableWidget
+
+- CommonActivatableWidget在Create出来后默认是Deactivate状态，需要手动Activate：<br> ![](./.github/2025-11-28-10-38-51.png)
+- 也可以在Details-Activation中勾选Auto Activate，勾选后会在Widget Create后自动Activate，Remove后自动Deactivate。<br> ![](./.github/2025-11-28-10-39-37.png)
+- CommonActivatableWidget可以覆写OnActivated和OnDeactivated来配置改变Activated状态后的回调：<br> ![](./.github/2025-11-28-10-40-24.png)
+- 必须实现GetDesiredFocusTarget方法，用于激活面板时聚焦那个Widget。当CommonActivatableWidget（及其子类对象）成为主激活控件时，可以在蓝图中通过重写这个函数来设置默认聚焦的控件对象。
+    - 请注意: 当勾选了bAutoRestoreFocus时，系统在恢复聚焦时会先检查是否保存了有效的聚焦对象（Widget）。如果该对象不存在，系统才会调用 GetDesiredFocusTarget。
+    - RequestRefreshFocus 允许在满足特定条件（当前节点是叶节点）的情况下，重新设置焦点到期望的焦点目标，而不需要对每个元素都进行Wrap.
+    - 蓝图：<br>![](./.github/2025-11-28-14-21-10.png)
+- 即使CommonActivatableWidget被Collapsed了，如果CommonActivatableWidget没有被Deactivate的话，依然会影响输入路由。
+- 默认情况下CommonActivatableWidget的Activate与Deactivate是不会影响Widget的Visibility的，可以在Details-Activation中单独配置：<br>![](./.github/2025-11-28-10-41-11.png)
+- OnHandleBackAction :当CommonActivatableWidget（及其子类对象）被激活为主控件时，通常需要处理返回操作的相关逻辑。为了方便处理返回事件，CommonUI提供了一些配置，当触发返回输入时，可以调用BP_OnHandleBackAction函数来优化返回事件的处理逻辑。这样可以使返回事件的绑定逻辑更加清晰和易于维护。
 
 #### Slot Panel
 其中有一个特殊的Panel - GameUIHUDLayoutPanel，用于制作游戏中的HUD也就是战斗中UI。特殊点是它使用GameUISlotPointWidget对子Widget进行占位，使用GameplayTag对应子Widget，动态加载不同的子Widget。
@@ -186,9 +198,21 @@ Lyra中为了实现分屏UI，设计了GameUIPolicy和PrimaryGameLayout。这里
 
 ![](./.github/2025-11-28-02-43-19.png)
 
+### Widget Focus
+
+![](./.github/2025-11-28-14-23-30.png)
+
 ## Input
 
 在Common UI中一定不要使用任何关于Enhanced Input相关的设置，Common UI对Enhanced Input的适配并没有非常的完善。如果Gameplay中使用了Enhanced Input，也会跟UI的输入打架。所以这里就是使用Common Input即可。
+
+在引擎中，处理输入的流程大概如下：
+
+![](2025-11-28-10-59-23.png)
+
+CommonUI主要对上图中的两个红色区域进行了一些自定义输入的扩展。
+
+
 
 ### Setup
 - 首先新建一个输入数据表<br>![](./.github/2025-11-28-02-51-47.png)
@@ -201,6 +225,81 @@ Lyra中为了实现分屏UI，设计了GameUIPolicy和PrimaryGameLayout。这里
 - 设置按键与图片<br>![](./.github/2025-11-28-02-59-07.png)
 - 在设置Gamepad Name时，需要和Project Setting中对应平台的Default Gamepad Name一致<br>![](./.github/2025-11-28-03-00-07.png)
 
+### Panel
+
+GameUIActivatablePanel的InputConfig中可以配置该Widget的输入模式，一旦Widget被Activate，会立刻切换至该Widget的输入模式：
+
+![](./.github/111.png)
+
+- Default：默认是GamePlay和Widget都可以接收输入。
+- Game and Menu：同理。
+- Game：只有Gameplay能够接收输入，自动隐藏鼠标。
+- Menu：只有Widget能够接收输入，对玩家的控制等都会被屏蔽，且会自动显示鼠标。
+也可以配置鼠标的捕获模式：
+
+![](./.github/222.png)
+
+- NoCapture：鼠标不会捕获此窗口的鼠标事件。
+- CapturePermanently：此窗口会捕获玩家的鼠标事件。
+- CapturePermanentlyIncludingInitialMouseDown：会捕获玩家的鼠标事件，并且除了鼠标点击外还能够处理鼠标按下的事件。
+- CaptureDuringMouseDown：鼠标按下触发捕获，抬起releases。
+- CaptureDuringRightMouseDown：鼠标右键按下触发捕获。
+
+### CommonAnalogCursor
+
+为了让Gamepad操作沿用鼠标的处理逻辑，CommonUI引入了合成光标FCommonAnalogCursor。它可以通过摇杆/Dpad导航到一个可交互的UI控件上，然后通过点击“EKeys::Virtual_Accept”按键来模拟鼠标左键点击UI
+
+继承结构：
+
+![](./.github/2025-11-28-10-55-04.png)
+
+为了在使用Gamepad操作时显示光标，我们需要执行以下控制台命令：
+
+- CommonUI.AlwaysShowCursor 1
+- CommonInput.EnableGamepadPlatformCursor 1
+
+FAnalogCursor类中实现了摇杆移动多少，鼠标就移动多少的逻辑。对于不想通过导航来选中UI的情况，可以考虑使用这种方式。目前在Common中，它只被当做调试时可用的选项。如果想要了解更多，请在FCommonAnalogCursor中搜索关键字bIsAnalogMovementEnabled
+
+通过Gamepad按键来模拟鼠标点击的执行流程如下：
+
+![](./.github/2025-11-28-10-56-51.png)
+
+光标位置的更新逻辑在FCommonAnalogCursor::Tick函数中实现。该逻辑将光标移动到当前聚焦的UI控件的中心点，以方便我们后续通过“EKeys::Virtual_Accept”按键来点击该UI.
+
+光标移动到聚焦控件的简化逻辑如下：
+
+![](./.github/2025-11-28-10-58-21.png)
+
+### Default Input
+
+如果想要修改默认按键映射，也就是默认手柄确认按键是A，如果想要修改为Y的话。直接修改Input Data中的配置并不能生效。使用Common Input的话，需要修改源码，也就是下面这里：
+
+![](./.github/2025-11-28-10-44-52.png)
+
+所以并不建议修改默认按键映射。
+
+EKeys::Virtual_Accept是一个虚拟按键，它在不同的平台可能对应不同的具体按键。默认情况下，EKeys::Virtual_Accept对应于“Gamepad_FaceButton_Bottom”
+```cpp
+InputCoreTypes.cpp
+
+const FKey EKeys::Virtual_Accept = FPlatformInput::GetGamepadAcceptKey();
+````
+
+| ControlType | EKey                      | Key | File                    |
+| ----------- | ------------------------- | --- | ----------------------- |
+| Snoy        | Gamepad_FaceButton_Bottom | X   |                         |
+| XBOX360     | Gamepad_FaceButton_Bottom | A   |                         |
+| Switch      | Gamepad_FaceButton_Right  | A   | SwitchPlatformInput.cpp |
+
+### 输入预处理层的扩展
+CommonUI对输入预处理进行了扩展，新增了两个输入预处理类：
+
+- FCommonAnalogCursor：这个类主要实现了通过光标模拟鼠标点击UI和使用摇杆滚动UI的逻辑。
+
+- FCommonEnhancedInputProcessor：用于CommonUI监听和处理输入设备切换事件以及过滤指定输入类型的处理。
+
+- GameViewportClient层输入的扩展：CommonUI在GameViewportClient层进行了自定义扩展，主要实现了UI绑定按键的功能。它会根据UI的激活状态、UI的层级以及所绑定按键的状态来执行UI的按键绑定逻辑。
+
 ### Display Name
 
 ![](./.github/2025-11-28-03-01-07.png)
@@ -208,3 +307,4 @@ Lyra中为了实现分屏UI，设计了GameUIPolicy和PrimaryGameLayout。这里
 在按键上会被设置：
 
 ![](./.github/2025-11-28-03-01-51.png)
+
